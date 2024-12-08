@@ -16,36 +16,70 @@ namespace IgnatDariaLab2.Pages.Books
 
         public IndexModel(IgnatDariaLab2.Data.IgnatDariaLab2Context context)
         {
-            _context = context;
+            {
+                _context = context;
+            }
         }
 
-        public IList<Book> Book { get; set; }
+        public IList<Book> Book { get; set; } = default!;
         public BookData BookD { get; set; }
         public int BookID { get; set; }
         public int CategoryID { get; set; }
+        public string TitleSort { get; set; }
+        public string AuthorSort { get; set; }
 
-
-        public async Task OnGetAsync(int? id, int? categoryID)
+        public string CurrentFilter { get; set; }
+        public async Task OnGetAsync(int? id, int? categoryID, string sortOrder, string searchString)
         {
-            BookD = new BookData();
+         
+            TitleSort = String.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+            AuthorSort = sortOrder == "author" ? "author_desc" : "author";
 
-            BookD.Books = await _context.Book
+            CurrentFilter = searchString;
+
+        
+            var booksQuery = _context.Book
+                .Include(b => b.Author)
                 .Include(b => b.Publisher)
                 .Include(b => b.BookCategories)
-                .ThenInclude(b => b.Category)
-                .Include(b => b.Author)  // Include autorul aici
-                .AsNoTracking()
-                .OrderBy(b => b.Title)
-                .ToListAsync();
+                .ThenInclude(bc => bc.Category)
+                .AsQueryable();
 
+       
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                booksQuery = booksQuery.Where(b =>
+                    b.Title.Contains(searchString) ||
+                    (b.Author.FirstName + " " + b.Author.LastName).Contains(searchString));
+            }
+
+      
+            booksQuery = sortOrder switch
+            {
+                "title_desc" => booksQuery.OrderByDescending(b => b.Title),
+                "author" => booksQuery.OrderBy(b => b.Author.LastName).ThenBy(b => b.Author.FirstName),
+                "author_desc" => booksQuery.OrderByDescending(b => b.Author.LastName).ThenByDescending(b => b.Author.FirstName),
+                _ => booksQuery.OrderBy(b => b.Title),
+            };
+
+          
+            BookD = new BookData
+            {
+                Books = await booksQuery.AsNoTracking().ToListAsync()
+            };
+
+         
             if (id != null)
             {
                 BookID = id.Value;
-                Book book = BookD.Books
-                    .Where(i => i.ID == id.Value).Single();
-                BookD.Categories = book.BookCategories.Select(s => s.Category);
+                var book = BookD.Books.FirstOrDefault(b => b.ID == id.Value);
+                if (book != null)
+                {
+                    BookD.Categories = book.BookCategories.Select(bc => bc.Category);
+                }
             }
         }
 
     }
 }
+
