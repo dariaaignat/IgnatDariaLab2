@@ -7,9 +7,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using IgnatDariaLab2.Data;
 using IgnatDariaLab2.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IgnatDariaLab2.Pages.Books
 {
+
+    [Authorize(Roles = "Admin")]
     public class CreateModel  : BookCategoriesPageModel
     {
         private readonly IgnatDariaLab2.Data.IgnatDariaLab2Context _context;

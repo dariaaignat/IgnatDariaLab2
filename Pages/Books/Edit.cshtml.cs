@@ -8,9 +8,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using IgnatDariaLab2.Data;
 using IgnatDariaLab2.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IgnatDariaLab2.Pages.Books
 {
+
+    [Authorize(Roles = "Admin")]
     public class EditModel : BookCategoriesPageModel
     {
         private readonly IgnatDariaLab2.Data.IgnatDariaLab2Context _context;
